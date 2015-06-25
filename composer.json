@@ -1,7 +1,7 @@
 {
-    "name": "tencentyun/php-sdk",
+    "name": "tencentyun/cos-php-sdk",
     "keywords": ["tencentyun", "qcloud", "sdk"],
-    "homepage": "qcloud.com",
+    "homepage": "http://qcloud.com",
     "license": "MIT",
     "description": "php sdk for qcloud.com cos service",
     "require": {
