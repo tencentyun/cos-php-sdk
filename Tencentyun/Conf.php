@@ -11,11 +11,12 @@ class Conf
 
 	const API_COSAPI_END_POINT = 'http://web.file.myqcloud.com/files/v1/';
 		
-    const APPID = '1000029';
+	//请到http://console.qcloud.com/cos去获取你的appid、sid、skey
+    const APPID = '';
 
-    const SECRET_ID = 'AKID4EAND9RuE6psJYOuFKlh0Jeg9Q9BmmS2';
+    const SECRET_ID = '';
 
-    const SECRET_KEY = 'jvAAGz07ElrJF1oKWpbKhAIzWF5W6BZN';
+    const SECRET_KEY = '';
 
     public static function getUA() {
         return 'QcloudPHP/'.self::PKG_VERSION.' ('.php_uname().')';

@@ -144,9 +144,6 @@ class Cosapi
             return $ret;
         }
 
-        var_dump($ret);
-        echo('##########################');
-
         $sliceSize = $ret['data']['slice_size'];
         if ($sliceSize > self::DEFAULT_SLICE_SIZE ||
             $sliceSize <= 0) {
@@ -157,10 +154,6 @@ class Cosapi
 
         $session = $ret['data']['session'];
         $offset = $ret['data']['offset'];
-
-        var_dump($sliceSize);
-        var_dump($session);
-        var_dump($offset);
 
         $ret = self::upload_data(
                 $fileSize, $sha1, $sliceSize,
@@ -261,9 +254,6 @@ class Cosapi
 
             $ret = self::sendRequest($req);
 
-            var_dump($ret);
-            echo('##########################');
-
             if($ret['httpcode'] != 200 
                     || $ret['code'] != 0) {
                 return $ret;
@@ -271,7 +261,6 @@ class Cosapi
 
             $session = $ret['data']['session'];
             $offset += $sliceSize;
-            var_dump($offset);
         
         }
 

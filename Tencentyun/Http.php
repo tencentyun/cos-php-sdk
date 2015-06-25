@@ -61,11 +61,6 @@ class Http
             }
         }
         $ret = curl_exec($curlHandle);
-        var_dump($ret);
-        if (!$ret) {
-            var_dump(curl_errno($curlHandle));
-            var_dump(curl_error($curlHandle));
-        }
         self::$_httpInfo = curl_getinfo($curlHandle);
         curl_close($curlHandle);
         return $ret;
