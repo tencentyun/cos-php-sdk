@@ -16,7 +16,7 @@ class Cosapi
     const COSAPI_FILE_NOT_EXISTS = -1;
     const COSAPI_NETWORK_ERROR = -2;
     const COSAPI_PARAMS_ERROR = -3;
-    const COSAPI_ILLEGAL_SLICE_SIZE_ERROR = -3;
+    const COSAPI_ILLEGAL_SLICE_SIZE_ERROR = -4;
     
     public static function generateResUrl($bucketName, $dstPath) {
         return Conf::API_COSAPI_END_POINT . Conf::APPID . '/' . $bucketName . $dstPath;
