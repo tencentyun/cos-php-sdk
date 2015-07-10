@@ -13,10 +13,16 @@ class Cosapi
     //10M
     const MIN_SLICE_FILE_SIZE = 10485760;
 
+    const MAX_RETRY_TIMES = 3;
+
     const COSAPI_FILE_NOT_EXISTS = -1;
     const COSAPI_NETWORK_ERROR = -2;
     const COSAPI_PARAMS_ERROR = -3;
     const COSAPI_ILLEGAL_SLICE_SIZE_ERROR = -4;
+
+    public static function cosUrlEncode($path) {
+        return str_replace('%2F', '/',  urlencode($path));
+    }
     
     public static function generateResUrl($bucketName, $dstPath) {
         return Conf::API_COSAPI_END_POINT . Conf::APPID . '/' . $bucketName . $dstPath;
@@ -60,6 +66,7 @@ class Cosapi
     public static function upload($srcPath, $bucketName, $dstPath, $bizAttr = null) {
 
         $srcPath = realpath($srcPath);
+        $dstPath = self::cosUrlEncode($dstPath);
 
         if (!file_exists($srcPath)) {
             return array(
@@ -107,6 +114,7 @@ class Cosapi
             $sliceSize = 0, $session = null) {
 
         $srcPath = realpath($srcPath);
+        $dstPath = self::cosUrlEncode($dstPath);
 
         if (!file_exists($srcPath)) {
             return array(
@@ -133,6 +141,9 @@ class Cosapi
         $ret = self::upload_prepare(
                 $fileSize, $sha1, $sliceSize, 
                 $sign, $url, $bizAttr, $session);
+
+        var_dump($ret);
+
         if($ret['httpcode'] != 200
                 || $ret['code'] != 0) {
             return $ret;
@@ -252,16 +263,27 @@ class Cosapi
                 ),
             );
 
-            $ret = self::sendRequest($req);
+            $retry_times = 0;
+            do {
+                $ret = self::sendRequest($req);
+                var_dump($ret);
+                if ($ret['httpcode'] == 200
+                    && $ret['code'] == 0) {
+                    break;
+                }
+                $retry_times++;
+            } while($retry_times < self::MAX_RETRY_TIMES);
 
             if($ret['httpcode'] != 200 
                     || $ret['code'] != 0) {
                 return $ret;
             }
 
-            $session = $ret['data']['session'];
+            if ($ret['data']['session']) {
+                $session = 
+                    $ret['data']['session'];
+            }
             $offset += $sliceSize;
-        
         }
 
         return $ret;
@@ -302,6 +324,7 @@ class Cosapi
      */
     public static function createFolder($bucketName, $path, 
                   $toOverWrite = 0, $bizAttr = null) {
+        $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_more($expired, $bucketName);
@@ -343,6 +366,7 @@ class Cosapi
                     $bucketName, $path, $num = 20, 
                     $pattern = 'eListBoth', $order = 0, $offset = null) {
 
+        $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_more($expired, $bucketName);
@@ -362,10 +386,8 @@ class Cosapi
             'url' => $url,
             'method' => 'get',
             'timeout' => 120,
-            'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,
-                'Content-Type: application/json',
             ),
         );
 
@@ -382,6 +404,7 @@ class Cosapi
     public static function update($bucketName, $path, 
                   $bizAttr = null) {
 
+        $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_once(
@@ -419,6 +442,7 @@ class Cosapi
     public static function stat(
                     $bucketName, $path) {
 
+        $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_more($expired, $bucketName);
@@ -434,10 +458,8 @@ class Cosapi
             'url' => $url,
             'method' => 'get',
             'timeout' => 120,
-            'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,
-                'Content-Type: application/json',
             ),
         );
 
@@ -452,6 +474,7 @@ class Cosapi
      */
     public static function del($bucketName, $path) {
 
+        $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_once(
