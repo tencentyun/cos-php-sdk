@@ -472,6 +472,12 @@ class Cosapi
      *
      */
     public static function del($bucketName, $path) {
+        if ($path == "/") {
+            return array(
+                    'code' => self::COSAPI_PARAMS_ERROR,
+                    'message' => 'can not delete bucket using api! go to http://console.qcloud.com/cos to operate bucket',
+                    );
+        }
 
         $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
