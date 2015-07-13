@@ -323,7 +323,7 @@ class Cosapi
      *
      */
     public static function createFolder($bucketName, $path, 
-                  $toOverWrite = 0, $bizAttr = null) {
+                  $bizAttr = null) {
         $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
@@ -331,7 +331,6 @@ class Cosapi
 
         $data = array(
             'op' => 'create',
-            'to_over_write' => $toOverWrite,
             'biz_attr' => (isset($bizAttr) ? $bizAttr : ''),
         );
         
