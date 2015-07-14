@@ -21,7 +21,8 @@ class Cosapi
     const COSAPI_ILLEGAL_SLICE_SIZE_ERROR = -4;
 
     public static function cosUrlEncode($path) {
-        return str_replace('%2F', '/',  urlencode($path));
+        //return str_replace('%2F', '/',  urlencode($path));
+        return str_replace('%2F', '/',  rawurlencode($path));
     }
     
     public static function generateResUrl($bucketName, $dstPath) {
