@@ -39,8 +39,8 @@ $sliceUploadRet = Cosapi::upload_slice(
 var_dump($sliceUploadRet);
 
 //创建目录
-//$createFolderRet = Cosapi::createFolder($bucketName, "/test/");
-//var_dump($createFolderRet);
+$createFolderRet = Cosapi::createFolder($bucketName, "/test/");
+var_dump($createFolderRet);
 
 //listFolder
 $listRet = Cosapi::listFolder($bucketName, "/");
