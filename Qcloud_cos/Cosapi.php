@@ -1,11 +1,11 @@
 <?php
 
-namespace Tencentyun;
+namespace Qcloud_cos;
 
 class Cosapi
 {
-    // 30 days
-    const EXPIRED_SECONDS = 2592000;
+    // 60 seconds
+    const EXPIRED_SECONDS = 60;
 
     //3M
     const DEFAULT_SLICE_SIZE = 3145728;
@@ -19,6 +19,17 @@ class Cosapi
     const COSAPI_NETWORK_ERROR = -2;
     const COSAPI_PARAMS_ERROR = -3;
     const COSAPI_ILLEGAL_SLICE_SIZE_ERROR = -4;
+
+    private static $timeout = 30;
+    
+    public static function setTimeout($t) {
+        if (!is_int($t) || $t < 0) {
+            return false;
+        }
+
+        self::$timeout = $t;
+        return true;
+    }
 
     public static function cosUrlEncode($path) {
         //return str_replace('%2F', '/',  urlencode($path));
@@ -79,7 +90,7 @@ class Cosapi
 
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $dstPath);
-        $sign = Auth::appSign_more($expired, $bucketName);
+        $sign = Auth::appSign($expired, $bucketName);
         $sha1 = hash_file('sha1', $srcPath);
 
         $data = array(
@@ -92,7 +103,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'post',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,
@@ -115,6 +126,14 @@ class Cosapi
             $sliceSize = 0, $session = null) {
 
         $srcPath = realpath($srcPath);
+
+        $fileSize = filesize($srcPath);
+        if ($fileSize < self::MIN_SLICE_FILE_SIZE) {
+            return self::upload(
+                    $srcPath, $bucketName, $dstPath,
+                    $bizAttr);
+        }
+
         $dstPath = self::cosUrlEncode($dstPath);
 
         if (!file_exists($srcPath)) {
@@ -125,18 +144,9 @@ class Cosapi
                     'data' => array());
         }
 
-        $fileSize = filesize($srcPath);
-        /*
-        if ($fileSize < self::MIN_SLICE_FILE_SIZE) {
-            return self::upload(
-                    $srcPath, $bucketName, $dstPath,
-                    $bizAttr);
-        }
-        */
-
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $dstPath);
-        $sign = Auth::appSign_more($expired, $bucketName);
+        $sign = Auth::appSign($expired, $bucketName);
         $sha1 = hash_file('sha1', $srcPath);
 
         $ret = self::upload_prepare(
@@ -210,7 +220,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'post',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,
@@ -256,7 +266,7 @@ class Cosapi
             $req = array(
                 'url' => $url,
                 'method' => 'post',
-                'timeout' => 120,
+                'timeout' => self::$timeout,
                 'data' => $data,
                 'header' => array(
                     'Authorization:'.$sign,
@@ -320,15 +330,22 @@ class Cosapi
     /*
      * 创建目录
      * @param  string  $bucketName
-     * @param  string  $path 目录路径，必须以‘/’结尾
+     * @param  string  $path 目录路径，sdk会补齐末尾的 '/'
      *
      */
-    public static function createFolder($bucketName, $path, 
+    public static function createFolder($bucketName, $path,
                   $bizAttr = null) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+        if (preg_match('/\/$/', $path) == 0) {
+            $path = $path . '/';
+        }
         $path = self::cosUrlEncode($path);
+
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
-        $sign = Auth::appSign_more($expired, $bucketName);
+        $sign = Auth::appSign($expired, $bucketName);
 
         $data = array(
             'op' => 'create',
@@ -340,7 +357,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'post',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,
@@ -350,26 +367,63 @@ class Cosapi
 
         return self::sendRequest($req);
     }
-        
+
     /*
-     * 目录列表,前缀搜索
+     * 目录列表
      * @param  string  $bucketName
-     * @param  string  $path     目录路径 web.file.myqcloud.com/files/v1/[appid]/[bucket_name]/[DirName]/
-     *                           web.file.myqcloud.com/files/v1/appid/[bucket_name]/[DirName]/[prefix] <- 如果填写prefix, 则列出含此前缀的所有文件
+     * @param  string  $path     目录路径，sdk会补齐末尾的 '/'
      * @param  int     $num      拉取的总数
      * @param  string  $pattern  eListBoth,ListDirOnly,eListFileOnly  默认both
      * @param  int     $order    默认正序(=0), 填1为反序,
      * @param  string  $offset   透传字段,用于翻页,前端不需理解,需要往前/往后翻页则透传回来
      *  
      */
-    public static function listFiles(
+    public static function listFolder(
+                    $bucketName, $path, $num = 20, 
+                    $pattern = 'eListBoth', $order = 0, 
+                    $offset = null) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+        if (preg_match('/\/$/', $path) == 0) {
+            $path = $path . '/';
+        }
+
+        return self::listBase($bucketName, $path, $num,
+                $pattern, $order, $offset);
+    }
+
+    /*
+     * 前缀搜索
+     * @param  string  $bucketName
+     * @param  string  $prefix   列出含此前缀的所有文件
+     * @param  int     $num      拉取的总数
+     * @param  string  $pattern  eListBoth,ListDirOnly,eListFileOnly  默认both
+     * @param  int     $order    默认正序(=0), 填1为反序,
+     * @param  string  $offset   透传字段,用于翻页,前端不需理解,需要往前/往后翻页则透传回来
+     *  
+     */
+    public static function prefixSearch(
+                    $bucketName, $prefix, $num = 20, 
+                    $pattern = 'eListBoth', $order = 0, 
+                    $offset = null) {
+
+        if (preg_match('/^\//', $prefix) == 0) {
+            $prefix = '/' . $prefix;
+        }
+
+        return self::listBase($bucketName, $prefix, $num,
+                $pattern, $order, $offset);
+    }
+
+    private static function listBase(
                     $bucketName, $path, $num = 20, 
                     $pattern = 'eListBoth', $order = 0, $offset = null) {
 
         $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
-        $sign = Auth::appSign_more($expired, $bucketName);
+        $sign = Auth::appSign($expired, $bucketName);
 
         $data = array(
             'op' => 'list',
@@ -385,7 +439,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'get',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'header' => array(
                 'Authorization:'.$sign,
             ),
@@ -396,21 +450,46 @@ class Cosapi
 
 
     /*
-     * 目录/文件信息 update
+     * 目录信息 update
      * @param  string  $bucketName
-     * @param  string  $path 路径，如果是目录则必须以‘/’结尾
+     * @param  string  $path 路径， sdk会补齐末尾的 '/'
+     *
+     */
+    public static function updateFolder($bucketName, $path, 
+                  $bizAttr = null) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+        if (preg_match('/\/$/', $path) == 0) {
+            $path = $path . '/';
+        }
+
+        return self::updateBase($bucketName, $path, $bizAttr);
+    }
+
+    /*
+     * 文件信息 update
+     * @param  string  $bucketName
+     * @param  string  $path 路径
      *
      */
     public static function update($bucketName, $path, 
+                  $bizAttr = null) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+
+        return self::updateBase($bucketName, $path, $bizAttr);
+    }
+
+    private static function updateBase($bucketName, $path, 
                   $bizAttr = null) {
 
         $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_once(
-                '/' . Conf::APPID . '/' . $bucketName . $path, 
-                $bucketName);
-        //$sign = Auth::appSign_more($expired, $bucketName);
+                $path, $bucketName);
 
         $data = array(
             'op' => 'update',
@@ -422,7 +501,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'post',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,
@@ -434,18 +513,45 @@ class Cosapi
     }
 
     /*
-     * 目录/文件信息 查询
+     * 目录信息 查询
      * @param  string  $bucketName
-     * @param  string  $path 路径，如果是目录则必须以‘/’结尾
+     * @param  string  $path 路径，sdk会补齐末尾的 '/'
+     *  
+     */
+    public static function statFolder(
+                    $bucketName, $path) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+        if (preg_match('/\/$/', $path) == 0) {
+            $path = $path . '/';
+        }
+
+        return self::statBase($bucketName, $path);
+    }
+
+    /*
+     * 文件信息 查询
+     * @param  string  $bucketName
+     * @param  string  $path 路径
      *  
      */
     public static function stat(
+                    $bucketName, $path) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+
+        return self::statBase($bucketName, $path);
+    }
+
+    private static function statBase(
                     $bucketName, $path) {
 
         $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
-        $sign = Auth::appSign_more($expired, $bucketName);
+        $sign = Auth::appSign($expired, $bucketName);
 
         $data = array(
             'op' => 'stat',
@@ -457,7 +563,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'get',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'header' => array(
                 'Authorization:'.$sign,
             ),
@@ -467,12 +573,38 @@ class Cosapi
     } 
 
     /*
-     * 删除文件及目录
+     * 删除目录
      * @param  string  $bucketName
-     * @param  string  $path 路径，如果是目录则必须以‘/’结尾
+     * @param  string  $path 路径，sdk会补齐末尾的 '/'
+     *                       注意不能删除bucket下根目录/
+     *
+     */
+    public static function delFolder($bucketName, $path) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+        if (preg_match('/\/$/', $path) == 0) {
+            $path = $path . '/';
+        }
+
+        return self::delBase($bucketName, $path);
+    }
+
+    /*
+     * 删除文件
+     * @param  string  $bucketName
+     * @param  string  $path 路径
      *
      */
     public static function del($bucketName, $path) {
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+
+        return self::delBase($bucketName, $path);
+    }
+
+    private static function delBase($bucketName, $path) {
         if ($path == "/") {
             return array(
                     'code' => self::COSAPI_PARAMS_ERROR,
@@ -484,9 +616,7 @@ class Cosapi
         $expired = time() + self::EXPIRED_SECONDS;
         $url = self::generateResUrl($bucketName, $path);
         $sign = Auth::appSign_once(
-                '/' . Conf::APPID . '/' . $bucketName . $path, 
-                $bucketName);
-        //$sign = Auth::appSign_more($expired, $bucketName);
+                $path, $bucketName);
 
         $data = array(
             'op' => 'delete',
@@ -497,7 +627,7 @@ class Cosapi
         $req = array(
             'url' => $url,
             'method' => 'post',
-            'timeout' => 120,
+            'timeout' => self::$timeout,
             'data' => $data,
             'header' => array(
                 'Authorization:'.$sign,

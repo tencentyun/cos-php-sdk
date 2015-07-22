@@ -8,25 +8,23 @@ php sdk for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%
 调用请参考示例1
 
 ## 修改配置
-修改Tencentyun/Conf.php内的appid等信息为您的配置
+修改Qcloud_cos/Conf.php内的appid等信息为您的配置
 
 ## 上传、查询、删除程序示例1（使用tencentyun提供的include.php）
 ```php
 <?php
 
-//require('./vendor/autoload.php');
-
 require('./include.php');
 
-use Tencentyun\Auth;
-use Tencentyun\Cosapi;
+use Qcloud_cos\Auth;
+use Qcloud_cos\Cosapi;
 
 $bucketName = 'your bucket name';
 $srcPath = 'local file path';
 $dstPath = 'remote file path';
 
 // 上传文件
-$uploadRet = Cosapi::upload('test.mp4', $bucketName, '/test.mp4');
+$uploadRet = Cosapi::upload('test.log', $bucketName, '/test.log');
 var_dump($uploadRet);
 
 //分片上传
@@ -38,22 +36,42 @@ $sliceUploadRet = Cosapi::upload_slice(
 //指定了session，可以实现断点续传
 //$sliceUploadRet = Cosapi::upload_slice(
 //        $srcPath, $bucketName, $dstPath, null, 2000000, '48d44422-3188-4c6c-b122-6f780742f125+CpzDLtEHAA==');
-//var_dump($sliceUploadRet);
+var_dump($sliceUploadRet);
 
-//list
-$listRet = Cosapi::listFiles($bucketName, '/test.mp4');
+//创建目录
+//$createFolderRet = Cosapi::createFolder($bucketName, "/test/");
+//var_dump($createFolderRet);
+
+//listFolder
+$listRet = Cosapi::listFolder($bucketName, "/");
 var_dump($listRet);
 
-//update
-$updateRet = Cosapi::update($bucketName, '/test.mp4', 'test_biz_attr');
+//prefixSearch
+$ret = Cosapi::prefixSearch($bucketName, "/test");
+var_dump($ret);
+
+//updateFolder
+$updateRet = Cosapi::updateFolder($bucketName, '/test/', 'attribution');
 var_dump($updateRet);
 
-//stat
-$statRet = Cosapi::stat($bucketName, '/test.mp4');
+//update
+$updateRet = Cosapi::update($bucketName, $dstPath, 'attribution');
+var_dump($updateRet);
+
+//statFolder
+$statRet = Cosapi::statFolder($bucketName, "/test/");
 var_dump($statRet);
 
+//stat
+$statRet = Cosapi::stat($bucketName, $dstPath);
+var_dump($statRet);
+
+//delFolder
+$delRet = Cosapi::delFolder($bucketName, "/test/");
+var_dump($delRet);
+
 //del
-$delRet = Cosapi::del($bucketName, '/test.mp4');
+$delRet = Cosapi::del($bucketName, $dstPath);
 var_dump($delRet);
 
 

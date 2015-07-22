@@ -1,6 +1,6 @@
 <?php
 
-namespace Tencentyun;
+namespace Qcloud_cos;
 
 class Http
 {
