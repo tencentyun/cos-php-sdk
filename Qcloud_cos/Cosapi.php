@@ -97,8 +97,12 @@ class Cosapi
             'op' => 'upload',
             'sha' => $sha1,
             'biz_attr' => (isset($bizAttr) ? $bizAttr : ''),
-            'filecontent' => '@'.$srcPath,
         );
+        if (function_exists('curl_file_create')) {
+            $data['filecontent'] = curl_file_create($srcPath);
+        } else {
+            $data['filecontent'] = '@'.$srcPath;
+        }
 
         $req = array(
             'url' => $url,
