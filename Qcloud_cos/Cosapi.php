@@ -385,7 +385,7 @@ class Cosapi
     public static function listFolder(
                     $bucketName, $path, $num = 20, 
                     $pattern = 'eListBoth', $order = 0, 
-                    $offset = null) {
+                    $context = null) {
         if (preg_match('/^\//', $path) == 0) {
             $path = '/' . $path;
         }
@@ -394,7 +394,7 @@ class Cosapi
         }
 
         return self::listBase($bucketName, $path, $num,
-                $pattern, $order, $offset);
+                $pattern, $order, $context);
     }
 
     /*
@@ -410,19 +410,19 @@ class Cosapi
     public static function prefixSearch(
                     $bucketName, $prefix, $num = 20, 
                     $pattern = 'eListBoth', $order = 0, 
-                    $offset = null) {
+                    $context = null) {
 
         if (preg_match('/^\//', $prefix) == 0) {
             $prefix = '/' . $prefix;
         }
 
         return self::listBase($bucketName, $prefix, $num,
-                $pattern, $order, $offset);
+                $pattern, $order, $context);
     }
 
     private static function listBase(
                     $bucketName, $path, $num = 20, 
-                    $pattern = 'eListBoth', $order = 0, $offset = null) {
+                    $pattern = 'eListBoth', $order = 0, $context = null) {
 
         $path = self::cosUrlEncode($path);
         $expired = time() + self::EXPIRED_SECONDS;
@@ -434,7 +434,7 @@ class Cosapi
             'num' => $num,
             'pattern' => $pattern,
             'order' => $order,
-            'offset' => $offset,
+            'context' => $context,
         );
         
         //$data = json_encode($data);
