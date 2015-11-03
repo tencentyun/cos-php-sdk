@@ -35,6 +35,7 @@ class Http
         $header = isset($rq['header']) ? $rq['header'] : array();
         $header[] = 'Method:'.$method;
         $header[] = 'User-Agent:'.Conf::getUA();
+        $header[] = 'Expect:';
         isset($rq['host']) && $header[] = 'Host:'.$rq['host'];
         curl_setopt($curlHandle, CURLOPT_HTTPHEADER, $header);
         curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, 1);
