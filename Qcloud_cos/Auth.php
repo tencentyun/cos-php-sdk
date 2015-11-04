@@ -49,6 +49,31 @@ class Auth
                     
         return self::appSignBase($appId, $secretId, $secretKey, 0, $fileId, $bucketName);
     }
+
+    /**
+     * 生成绑定资源的多次有效签名
+     * @param  string $path       文件相对bucket的路径 /test/test.log 标识该bucket下test目录下的test.log文件
+     * @param  string $bucketName bucket
+     * @param  int $expired    过期时间，unix时间戳
+     * @return string             签名串
+     */
+    public static function appSign_multiple($path, $bucketName, $expired) {
+
+        $appId = Conf::APPID;
+        $secretId = Conf::SECRET_ID;
+        $secretKey = Conf::SECRET_KEY;
+
+        if (preg_match('/^\//', $path) == 0) {
+            $path = '/' . $path;
+        }
+        $fileId = $path;
+        
+        if (empty($secretId) || empty($secretKey) || empty($appId)) {
+            return self::AUTH_SECRET_ID_KEY_ERROR;
+        }
+                    
+        return self::appSignBase($appId, $secretId, $secretKey, $expired, $fileId, $bucketName);
+    }
     
     /**
      * 签名函数（上传、下载会生成多次有效签名，删除资源会生成单次有效签名）
