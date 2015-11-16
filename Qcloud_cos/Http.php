@@ -5,6 +5,7 @@ namespace Qcloud_cos;
 class Http
 {
     public static $_httpInfo = '';
+    public static $_curlHandler;
 
     /**
      * send http request
@@ -20,8 +21,12 @@ class Http
      * @return string    http请求响应
      */
     public static function send($rq) {
-        $curlHandle = curl_init();
-        curl_setopt($curlHandle, CURLOPT_URL, $rq['url']);
+        if (self::$_curlHandler) {
+            curl_reset(self::$_curlHandler);
+        } else {
+            self::$_curlHandler = curl_init();
+        }
+        curl_setopt(self::$_curlHandler, CURLOPT_URL, $rq['url']);
         switch (true) {
             case isset($rq['method']) && in_array(strtolower($rq['method']), array('get', 'post', 'put', 'delete', 'head')):
                 $method = strtoupper($rq['method']);
@@ -35,38 +40,39 @@ class Http
         $header = isset($rq['header']) ? $rq['header'] : array();
         $header[] = 'Method:'.$method;
         $header[] = 'User-Agent:'.Conf::getUA();
+        $header[] = 'Connection: keep-alive';
         if ('POST' == $method) {
             $header[] = 'Expect: ';
         }
 
         isset($rq['host']) && $header[] = 'Host:'.$rq['host'];
-        curl_setopt($curlHandle, CURLOPT_HTTPHEADER, $header);
-        curl_setopt($curlHandle, CURLOPT_RETURNTRANSFER, 1);
-        curl_setopt($curlHandle, CURLOPT_CUSTOMREQUEST, $method);
-        isset($rq['timeout']) && curl_setopt($curlHandle, CURLOPT_TIMEOUT, $rq['timeout']);
-        isset($rq['data']) && in_array($method, array('POST', 'PUT')) && curl_setopt($curlHandle, CURLOPT_POSTFIELDS, $rq['data']);
+        curl_setopt(self::$_curlHandler, CURLOPT_HTTPHEADER, $header);
+        curl_setopt(self::$_curlHandler, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt(self::$_curlHandler, CURLOPT_CUSTOMREQUEST, $method);
+        isset($rq['timeout']) && curl_setopt(self::$_curlHandler, CURLOPT_TIMEOUT, $rq['timeout']);
+        isset($rq['data']) && in_array($method, array('POST', 'PUT')) && curl_setopt(self::$_curlHandler, CURLOPT_POSTFIELDS, $rq['data']);
         $ssl = substr($rq['url'], 0, 8) == "https://" ? true : false;
         if( isset($rq['cert'])){
-            curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER,true);
-            curl_setopt($curlHandle, CURLOPT_CAINFO, $rq['cert']);
-            curl_setopt($curlHandle, CURLOPT_SSL_VERIFYHOST,2);
+            curl_setopt(self::$_curlHandler, CURLOPT_SSL_VERIFYPEER,true);
+            curl_setopt(self::$_curlHandler, CURLOPT_CAINFO, $rq['cert']);
+            curl_setopt(self::$_curlHandler, CURLOPT_SSL_VERIFYHOST,2);
             if (isset($rq['ssl_version'])) {
-                curl_setopt($curlHandle, CURLOPT_SSLVERSION, $rq['ssl_version']);
+                curl_setopt(self::$_curlHandler, CURLOPT_SSLVERSION, $rq['ssl_version']);
             } else {
-                curl_setopt($curlHandle, CURLOPT_SSLVERSION, 4);
+                curl_setopt(self::$_curlHandler, CURLOPT_SSLVERSION, 4);
             }
         }else if( $ssl ){
-            curl_setopt($curlHandle, CURLOPT_SSL_VERIFYPEER,false);   //true any ca
-            curl_setopt($curlHandle, CURLOPT_SSL_VERIFYHOST,1);       //check only host
+            curl_setopt(self::$_curlHandler, CURLOPT_SSL_VERIFYPEER,false);   //true any ca
+            curl_setopt(self::$_curlHandler, CURLOPT_SSL_VERIFYHOST,1);       //check only host
             if (isset($rq['ssl_version'])) {
-                curl_setopt($curlHandle, CURLOPT_SSLVERSION, $rq['ssl_version']);
+                curl_setopt(self::$_curlHandler, CURLOPT_SSLVERSION, $rq['ssl_version']);
             } else {
-                curl_setopt($curlHandle, CURLOPT_SSLVERSION, 4);
+                curl_setopt(self::$_curlHandler, CURLOPT_SSLVERSION, 4);
             }
         }
-        $ret = curl_exec($curlHandle);
-        self::$_httpInfo = curl_getinfo($curlHandle);
-        curl_close($curlHandle);
+        $ret = curl_exec(self::$_curlHandler);
+        self::$_httpInfo = curl_getinfo(self::$_curlHandler);
+        //curl_close(self::$_curlHandler);
         return $ret;
     }
 
