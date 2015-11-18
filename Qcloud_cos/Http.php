@@ -1,7 +1,15 @@
 <?php
 
 namespace Qcloud_cos;
-
+function my_curl_reset($handler)
+{
+    curl_setopt($handler, CURLOPT_URL, '');
+    curl_setopt($handler, CURLOPT_HTTPHEADER, array());
+    curl_setopt($handler, CURLOPT_POSTFIELDS, array());
+    curl_setopt($handler, CURLOPT_TIMEOUT, 0);
+    curl_setopt($handler, CURLOPT_SSL_VERIFYPEER, false);
+    curl_setopt($handler, CURLOPT_SSL_VERIFYHOST, 0);
+}
 class Http
 {
     public static $_httpInfo = '';
@@ -22,7 +30,11 @@ class Http
      */
     public static function send($rq) {
         if (self::$_curlHandler) {
-            curl_reset(self::$_curlHandler);
+            if (function_exists('curl_reset')) {
+                curl_reset(self::$_curlHandler);
+            } else {
+                my_curl_reset(self::$_curlHandler);
+            }
         } else {
             self::$_curlHandler = curl_init();
         }
