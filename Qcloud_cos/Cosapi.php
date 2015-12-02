@@ -158,7 +158,7 @@ class Cosapi
                 $fileSize, $sha1, $sliceSize, 
                 $sign, $url, $bizAttr, $session);
 
-        var_dump($ret);
+        //var_dump($ret);
 
         if($ret['httpcode'] != 200
                 || $ret['code'] != 0) {
@@ -282,7 +282,7 @@ class Cosapi
             $retry_times = 0;
             do {
                 $ret = self::sendRequest($req);
-                var_dump($ret);
+                //var_dump($ret);
                 if ($ret['httpcode'] == 200
                     && $ret['code'] == 0) {
                     break;
