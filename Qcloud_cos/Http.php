@@ -84,7 +84,6 @@ class Http
         }
         $ret = curl_exec(self::$_curlHandler);
         self::$_httpInfo = curl_getinfo(self::$_curlHandler);
-        //curl_close(self::$_curlHandler);
         return $ret;
     }
 

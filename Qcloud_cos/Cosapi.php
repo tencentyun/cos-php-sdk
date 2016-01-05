@@ -32,7 +32,6 @@ class Cosapi
     }
 
     public static function cosUrlEncode($path) {
-        //return str_replace('%2F', '/',  urlencode($path));
         return str_replace('%2F', '/',  rawurlencode($path));
     }
     
@@ -41,8 +40,6 @@ class Cosapi
     }
         
     public static function sendRequest($req) {
-        //var_dump($req);
-
         $rsp = Http::send($req);
         $info = Http::info();
         $ret = json_decode($rsp, true);
@@ -158,8 +155,6 @@ class Cosapi
                 $fileSize, $sha1, $sliceSize, 
                 $sign, $url, $bizAttr, $session);
 
-        var_dump($ret);
-
         if($ret['httpcode'] != 200
                 || $ret['code'] != 0) {
             return $ret;
@@ -192,17 +187,6 @@ class Cosapi
     private static function upload_prepare(
             $fileSize, $sha1, $sliceSize,
             $sign, $url, $bizAttr, $session = null) {
-        /*
-        if (file_exists($sha1)) {
-            $lastSession = file_get_contents($sha1);
-            $lastSession = json_decode($lastSession);
-            if (is_array($lastSession)
-                 && isset($lastSession['session'])
-                 && is_string($lastSession['session'])) {
-                $session = $lastSession['session'];
-            }
-        }
-        */
 
         $data = array(
             'op' => 'upload_slice',
@@ -242,26 +226,14 @@ class Cosapi
             $sign, $url, $srcPath, 
             $offset, $session) {
     
-        //$handle = fopen($srcPath, "rb");
         while ($fileSize > $offset) {
             $filecontent = file_get_contents(
                     $srcPath, false, null,
                     $offset, $sliceSize);
-            //$filecontent = fread($handle, $sliceSize);
 
             if ($filecontent === false) {
                 return $ret;
             }
-
-            /*
-            $data = array(
-                'op' => 'upload_slice',
-                'sha' => $sha1,
-                'session' => $session,
-                'offset' => $offset,
-                'filecontent' => $filecontent,
-            );
-            */
 
             $boundary = '---------------------------' . substr(md5(mt_rand()), 0, 10); 
             $data = self::generateSliceBody(
@@ -316,9 +288,6 @@ class Cosapi
 
         $formdata .= '--' . $boundary . "\r\n";
         $formdata .= "content-disposition: form-data; name=\"offset\"\r\n\r\n" . $offset. "\r\n";
-
-        //$formdata .= '--' . $boundary . "\r\n";
-        //$formdata .= "content-disposition: form-data; name=\"sha\"\r\n\r\n" . $sha . "\r\n";
 
         $formdata .= '--' . $boundary . "\r\n";
         $formdata .= "content-disposition: form-data; name=\"session\"\r\n\r\n" . $session . "\r\n";
@@ -438,7 +407,6 @@ class Cosapi
             'context' => $context,
         );
         
-        //$data = json_encode($data);
         $url = $url . '?' . http_build_query($data);
 
         $req = array(
@@ -562,7 +530,6 @@ class Cosapi
             'op' => 'stat',
         );
 
-        //$data = json_encode($data);
         $url = $url . '?' . http_build_query($data);
 
         $req = array(
