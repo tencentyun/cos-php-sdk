@@ -177,6 +177,12 @@ class Cosapi
         $session = $ret['data']['session'];
         $offset = $ret['data']['offset'];
 
+        $sliceCnt = ceil($fileSize / $sliceSize);
+        // expired seconds for one slice mutiply by slice count 
+        // will be the expired seconds for whole file
+        $expired = time() + (self::EXPIRED_SECONDS * $sliceCnt);
+        $sign = Auth::appSign($expired, $bucketName);
+
         $ret = self::upload_data(
                 $fileSize, $sha1, $sliceSize,
                 $sign, $url, $srcPath,
@@ -221,6 +227,18 @@ class Cosapi
     
     }
 
+    /**
+     * [upload_data description]
+     * @param  int $fileSize  filesize
+     * @param  string $sha1      filesha
+     * @param  int $sliceSize file slice size
+     * @param  string $sign      sign, it will be replaced.
+     * @param  string $url       url
+     * @param  string $srcPath   src path
+     * @param  int $offset    upload offset
+     * @param  string $session   session string
+     * @return array            result array
+     */
     private static function upload_data(
             $fileSize, $sha1, $sliceSize,
             $sign, $url, $srcPath, 
@@ -232,7 +250,12 @@ class Cosapi
                     $offset, $sliceSize);
 
             if ($filecontent === false) {
-                return $ret;
+                return array(
+                    'httpcode' => 0, 
+                    'code' => self::COSAPI_FILE_NOT_EXISTS,
+                    'message' => 'read file '.$srcPath.' error', 
+                    'data' => array(),
+                );
             }
 
             $boundary = '---------------------------' . substr(md5(mt_rand()), 0, 10); 
@@ -254,7 +277,6 @@ class Cosapi
             $retry_times = 0;
             do {
                 $ret = self::sendRequest($req);
-                var_dump($ret);
                 if ($ret['httpcode'] == 200
                     && $ret['code'] == 0) {
                     break;
