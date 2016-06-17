@@ -1,73 +1,62 @@
 <?php
 
 require('./include.php');
-
 use Qcloud_cos\Auth;
 use Qcloud_cos\Cosapi;
-
-$bucketName = 'test_mikenwang_20150623';
-
-//$srcPath = '/home/ubuntu/cos/sdk/63MB_test.exe';
-//$dstPath = '/63MB_test.exe';
-//$srcPath = '/home/ubuntu/cos/sdk/php-sdk/cos-php-sdk/test.mp4';
-//$dstPath = '/test.mp4';
+use Qcloud_cos\CosDb;
+$bucketName = 'test';
 $srcPath = './test.log';
-$dstPath = "/test.log";
+$dstPath = '/sdk/test.log';
+$dstFolder = '/sdk/';
 
-Cosapi::setTimeout(10);
+Cosapi::setTimeout(180);
 
-// 上传文件
-//$uploadRet = Cosapi::upload($srcPath, $bucketName, 
-//        $dstPath);
-//var_dump($uploadRet);
+//创建文件夹
+$createFolderRet = Cosapi::createFolder($bucketName, $dstFolder);
+var_dump($createFolderRet);
 
-//分片上传
-//$sliceUploadRet = Cosapi::upload_slice(
-//        $srcPath, $bucketName, $dstPath);
-//用户指定分片大小来分片上传
-//$sliceUploadRet = Cosapi::upload_slice(
-//        $srcPath, $bucketName, $dstPath, null, 3*1024*1024);
-//指定了session，可以实现断点续传
-//$sliceUploadRet = Cosapi::upload_slice(
-//        $srcPath, $bucketName, $dstPath, null, 2000000, '48d44422-3188-4c6c-b122-6f780742f125+CpzDLtEHAA==');
-//var_dump($sliceUploadRet);
+//上传文件
+$bizAttr = "";
+$insertOnly = 0;
+$sliceSize = 3 * 1024 * 1024;
+$uploadRet = Cosapi::upload($bucketName, $srcPath, $dstPath,$bizAttr,$sliceSize, $insertOnly);
+var_dump($uploadRet);
 
-//创建目录
-//$createFolderRet = Cosapi::createFolder($bucketName, "/test/");
-//var_dump($createFolderRet);
-
-//listFolder
-$listRet = Cosapi::listFolder($bucketName, "/");
+//目录列表
+$listnum = 20;
+$pattern = "eListBoth";
+$order = 0;
+$listRet = Cosapi::listFolder($bucketName, $dstFolder,$listnum,$pattern, $order);
 var_dump($listRet);
 
-//prefixSearch
-//$ret = Cosapi::prefixSearch($bucketName, "/test");
-//var_dump($ret);
+//更新目录信息
+$bizAttr = "";
+$updateRet = Cosapi::updateFolder($bucketName, $dstFolder, $bizAttr);
+var_dump($updateRet);
 
-//updateFolder
-//$updateRet = Cosapi::updateFolder($bucketName, '/test/', '{json:0}');
-//var_dump($updateRet);
+//更新文件信息
+$bizAttr = "";
+$authority = "eWPrivateRPublic";
+$customer_headers_array = array(
+    'Cache-Control' => "no",
+    'Content-Type' => "application/pdf",
+    'Content-Language' => "ch",
+);
+$updateRet = Cosapi::update($bucketName, $dstPath, $bizAttr,$authority, $customer_headers_array);
+var_dump($updateRet);
 
-//update
-//$updateRet = Cosapi::update($bucketName, $dstPath, '{json:1}');
-//var_dump($updateRet);
+//查询目录信息
+$statRet = Cosapi::statFolder($bucketName, $dstFolder);
+var_dump($statRet);
 
-//statFolder
-//$statRet = Cosapi::statFolder($bucketName, "/test/");
-//var_dump($statRet);
+//查询文件信息
+$statRet = Cosapi::stat($bucketName, $dstPath);
+var_dump($statRet);
 
-//stat
-//$statRet = Cosapi::stat($bucketName, $dstPath);
-//var_dump($statRet);
+//删除文件
+$delRet = Cosapi::delFile($bucketName, $dstPath);
+var_dump($delRet);
 
-//delFolder
-//$delRet = Cosapi::delFolder($bucketName, "/test/");
-//var_dump($delRet);
-
-//del
-//$delRet = Cosapi::del($bucketName, $dstPath);
-//var_dump($delRet);
-
-//end of script
-
-
+//删除目录
+$delRet = Cosapi::delFolder($bucketName, $dstFolder);
+var_dump($delRet);

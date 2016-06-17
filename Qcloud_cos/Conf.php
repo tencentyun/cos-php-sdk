@@ -3,7 +3,7 @@ namespace Qcloud_cos;
 
 class Conf
 {
-    const PKG_VERSION = '1.0.0'; 
+    const PKG_VERSION = 'v3.3'; 
 
     const API_IMAGE_END_POINT = 'http://web.image.myqcloud.com/photos/v1/';
     const API_VIDEO_END_POINT = 'http://web.video.myqcloud.com/videos/v1/';
@@ -15,9 +15,8 @@ class Conf
 
 
     public static function getUA() {
-        return 'QcloudPHP/'.self::PKG_VERSION.' ('.php_uname().')';
+        return 'cos-php-sdk-'.self::PKG_VERSION;
     }
 }
-
 
 //end of script

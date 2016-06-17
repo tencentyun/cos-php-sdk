@@ -5,74 +5,59 @@ php sdk for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%
 
 ### 直接下载源码集成
 从github下载源码装入到您的程序中，并加载include.php
-调用请参考示例1
 
 ## 修改配置
-修改Qcloud_cos/Conf.php内的appid等信息为您的配置
+修改Qcloud_cos/Conf.php内的APPID、SECRET_ID、SECRET_KEY等信息为您的配置
 
 ## 上传、查询、删除程序示例1（使用tencentyun提供的include.php）
-```php
-<?php
+请参考sample.php
 
-require('./include.php');
-
-use Qcloud_cos\Auth;
-use Qcloud_cos\Cosapi;
-
-$bucketName = 'your bucket name';
-$srcPath = 'local file path';
-$dstPath = 'remote file path';
-
-// 上传文件
-$uploadRet = Cosapi::upload('test.log', $bucketName, '/test.log');
-var_dump($uploadRet);
-
-//分片上传
-$sliceUploadRet = Cosapi::upload_slice(
-        $srcPath, $bucketName, $dstPath);
-//用户指定分片大小来分片上传
-//$sliceUploadRet = Cosapi::upload_slice(
-//        $srcPath, $bucketName, $dstPath, null, 2000000);
-//指定了session，可以实现断点续传
-//$sliceUploadRet = Cosapi::upload_slice(
-//        $srcPath, $bucketName, $dstPath, null, 2000000, '48d44422-3188-4c6c-b122-6f780742f125+CpzDLtEHAA==');
-var_dump($sliceUploadRet);
-
-//创建目录
-$createFolderRet = Cosapi::createFolder($bucketName, "/test/");
+//创建文件夹
+$createFolderRet = Cosapi::createFolder($bucketName, $dstFolder);
 var_dump($createFolderRet);
 
-//listFolder
-$listRet = Cosapi::listFolder($bucketName, "/");
+//上传文件
+$bizAttr = "";
+$insertOnly = 0;
+$sliceSize = 3 * 1024 * 1024;
+$uploadRet = Cosapi::upload($bucketName, $srcPath, $dstPath,$bizAttr,$sliceSize, $insertOnly);
+var_dump($uploadRet);
+
+//目录列表
+$listnum = 20;
+$pattern = "eListBoth";
+$order = 0;
+$listRet = Cosapi::listFolder($bucketName, $dstFolder,$listnum,$pattern, $order);
 var_dump($listRet);
 
-//prefixSearch
-$ret = Cosapi::prefixSearch($bucketName, "/test");
-var_dump($ret);
-
-//updateFolder
-$updateRet = Cosapi::updateFolder($bucketName, '/test/', 'attribution');
+//更新目录信息
+$bizAttr = "";
+$updateRet = Cosapi::updateFolder($bucketName, $dstFolder, $bizAttr);
 var_dump($updateRet);
 
-//update
-$updateRet = Cosapi::update($bucketName, $dstPath, 'attribution');
+//更新文件信息
+$bizAttr = "";
+$authority = "eWPrivateRPublic";
+$customer_headers_array = array(
+    'Cache-Control' => "no",
+    'Content-Type' => "application/pdf",
+    'Content-Language' => "ch",
+);
+$updateRet = Cosapi::update($bucketName, $dstPath, $bizAttr,$authority, $customer_headers_array);
 var_dump($updateRet);
 
-//statFolder
-$statRet = Cosapi::statFolder($bucketName, "/test/");
+//查询目录信息
+$statRet = Cosapi::statFolder($bucketName, $dstFolder);
 var_dump($statRet);
 
-//stat
+//查询文件信息
 $statRet = Cosapi::stat($bucketName, $dstPath);
 var_dump($statRet);
 
-//delFolder
-$delRet = Cosapi::delFolder($bucketName, "/test/");
+//删除文件
+$delRet = Cosapi::delFile($bucketName, $dstPath);
 var_dump($delRet);
 
-//del
-$delRet = Cosapi::del($bucketName, $dstPath);
+//删除目录
+$delRet = Cosapi::delFolder($bucketName, $dstFolder);
 var_dump($delRet);
-
-
-```
