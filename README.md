@@ -2,6 +2,10 @@
 
 SDK for [腾讯云对象存储服务](http://wiki.qcloud.com/wiki/COS%E4%BA%A7%E5%93%81%E4%BB%8B%E7%BB%8D)
 
+## 已弃用 - 请升级到 cos-php-sdk-v5
+
+SDK 依赖的 API 已弃用，请直接使用基于 XML API 的 [cos-php-sdk-v5](https://github.com/tencentyun/cos-php-sdk-v5)。
+
 ## 源码集成
 
 从github下载源码装入到您的程序中，并加载include.php
